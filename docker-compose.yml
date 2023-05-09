@@ -1,0 +1,43 @@
+# dockerfile: Dockerfile
+# dockerfile: Dockerfile.qa
+# dockerfile: Dockerfile.stage
+# dockerfile: Dockerfile.prod.
+
+version: '3.9'
+services:
+  ui-cypress-test:
+    container_name: ui-cypress-test
+    build: 
+      context: .
+      dockerfile: Dockerfile-start-server
+    environment:
+      - NODE_PATH=src/
+    command: [" npm run start"]
+  
+  nginx:
+    container_name: nginx
+    image: nginx:1.19
+    restart: always
+    volumes:
+      - ./nginx-conf:/etc/nginx/conf.d
+    depends_on:
+      - ui-cypress-test
+  
+  ui-cypress-run:
+    container_name: ui-cypress-run
+    build:
+      context: .
+      dockerfile: Dockerfile-start-server
+    environment:
+      - NODE_PATH=src/
+    command: ["./check-ui.sh"]
+    volumes:
+      - ./coverage/:/usr/apps/coverage/
+      - ./dist/:/usr/apps/dist/
+      - ./.nyc_output/:/usr/apps/.nyc_output/
+    depends_on:
+      -  ui-cypress-test
+      - nginx
+
+
+
